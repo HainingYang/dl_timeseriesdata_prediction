@@ -1,0 +1,31 @@
+dbrp "lstmData"."autogen"
+
+var seq = 4
+var path = '/tmp/lstmModel.h5'
+var std = 0.5
+
+var data = stream
+    |from()
+        .measurement('sale')
+    |window()
+        .everyCount(1)
+        .periodCount(seq+1)
+        .fillPeriod()
+data
+    |influxDBOut()
+    .database('testset')
+    .retentionPolicy('autogen')
+    .measurement('original')
+
+data
+   @lstmTest()
+       .field('value')
+       .sequence(seq)
+       .path(path)
+       .std(std)
+  |eval(lambda: "value"/1.0)
+    .as('predict')
+  |influxDBOut()
+       .database('testset')
+       .retentionPolicy('autogen')
+       .measurement('prediction')

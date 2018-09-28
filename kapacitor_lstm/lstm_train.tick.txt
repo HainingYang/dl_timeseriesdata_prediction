@@ -1,0 +1,22 @@
+dbrp "lstmData"."autogen"
+
+var seq = 4
+var path = '/tmp/lstmModel.h5'
+
+var data = stream
+    |from()
+        .measurement('sale')
+    |window()
+        .everyCount(5000+seq)
+        .periodCount(5000+seq)
+
+data
+   @lstmTrain()
+       .field('value')
+       .sequence(seq)
+       .path(path)
+   |alert()
+    .id('kapacitor/{{ index .Tags "service" }}')
+    .message('training finished')
+    .info(lambda:"result"==TRUE)
+    .log('/tmp/finished.log')
